@@ -1,0 +1,77 @@
+package com.phietro.task.ui.auth
+
+import android.os.Bundle
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.isVisible
+import com.google.firebase.auth.FirebaseAuth
+import com.phietro.task.R
+import com.phietro.task.databinding.FragmentRecoverAccountBinding
+import com.phietro.task.util.FirebaseHelper
+import com.phietro.task.util.initToolbar
+import com.phietro.task.util.showBottomSheet
+
+class RecoverAccountFragment : Fragment() {
+
+    private var _binding: FragmentRecoverAccountBinding?=null
+    private val binding get() = _binding!!
+
+    private lateinit var auth: FirebaseAuth
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding= FragmentRecoverAccountBinding.inflate(inflater,container,false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        auth = FirebaseHelper.getAuth()
+        initToolbar(binding.toolbar)
+        initListener()
+    }
+
+    private fun initListener(){
+        binding.btnRegistrar.setOnClickListener{
+            validateData()
+        }
+    }
+
+    private fun validateData(){
+        val email = binding.digiteEmail.text.toString().trim()
+
+        if(email.isNotBlank()){
+            binding.progressBar.isVisible=true
+            Toast.makeText(requireContext(),"Tudo OK!", Toast.LENGTH_SHORT).show()
+        }else{
+            showBottomSheet(message = getString(R.string.email_empty))
+        }
+    }
+
+    private fun recoverAccountUser(email: String ){
+        try {
+            auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener { task ->
+                    binding.progressBar.isVisible = false
+                    if (task.isSuccessful){
+                        showBottomSheet(message = "Um e-mail foi enviado para sua caixa de entrada com o l...")
+                    }else{
+                        showBottomSheet( message = getString( FirebaseHelper.validError( error = task.exception?.message.toString() ) ) )
+                    }
+                }
+        }catch ( e: Exception){
+            Toast.makeText(requireContext(),e.message.toString(),Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding =null
+    }
+
+}
